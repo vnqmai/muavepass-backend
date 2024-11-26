@@ -8,6 +8,7 @@ const orderSchema = new Schema({
   phone: { type: String, required: true, trim: true },
   fullname: { type: String, required: true, trim: true },
   status: { type: String, required: true, trim: true },
+  user_id: { type: String, required: true, trim: true },
 });
 
 module.exports = mongoose.model("Order", orderSchema);

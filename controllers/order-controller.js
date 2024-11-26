@@ -43,7 +43,7 @@ router.post("/create", async function (req, res) {
 });
 
 router.post("/create-order-log", async function (req, res) {
-  const { orderCode, productId, userName, userEmail, userPhone } = req.body;
+  const { orderCode, productId, userName, userEmail, userPhone, userId } = req.body;
   const body = {
     order_id: orderCode,
     product_id: productId,
@@ -51,6 +51,7 @@ router.post("/create-order-log", async function (req, res) {
     phone: userPhone,
     fullname: userName,
     status: "IN_PROGRESS",
+    user_id: userId
   };
 
   Order.create(body).then((order) => {
