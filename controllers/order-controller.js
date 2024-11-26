@@ -125,6 +125,7 @@ router.get("/:orderId", async function (req, res) {
     const mail = {
       from: process.env.SMTP_FROM_EMAIL,
       to: orderLog.email,
+      cc: process.env.SMTP_TO_EMAIL,
       subject: `[Muavepass] Thanh toán thành công vé ${product.product_name} - #${order.orderCode}`,
       text: `
         Muavepass xin thông báo bạn đã thanh toán thành công vé ${product.product_name} - Vị trí: ${product.seat} - Mã đơn #${order.orderCode}.
