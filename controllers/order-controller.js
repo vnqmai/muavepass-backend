@@ -9,7 +9,7 @@ router.post("/create", async function (req, res) {
   const { description, returnUrl, cancelUrl, amount } = req.body;
   const body = {
     orderCode: Number(String(new Date().getTime()).slice(-6)),
-    amount: 10000,
+    amount: amount,
     description,
     cancelUrl,
     returnUrl,

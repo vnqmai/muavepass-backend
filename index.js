@@ -22,7 +22,7 @@ app.post("/create-payment-link", async (req, res) => {
   const YOUR_DOMAIN = "http://localhost:3001";
   const body = {
     orderCode: Number(String(Date.now()).slice(-6)),
-    amount: 10000,
+    // amount: amount,
     description: "Thanh toan don hang",
     returnUrl: `${YOUR_DOMAIN}/result?orderCode=${res.orderCode}`,
     cancelUrl: `${YOUR_DOMAIN}/result`,
