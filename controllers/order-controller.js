@@ -1,15 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const payOS = require("../utils/payos");
+const Product = require("../models/Product");
+const Transaction = require("../models/Transaction");
+const Order = require("../models/Order");
 
 router.post("/create", async function (req, res) {
   const { description, returnUrl, cancelUrl, amount } = req.body;
   const body = {
     orderCode: Number(String(new Date().getTime()).slice(-6)),
-    amount,
+    amount: 10000,
     description,
     cancelUrl,
-    returnUrl
+    returnUrl,
   };
 
   try {
@@ -39,10 +42,47 @@ router.post("/create", async function (req, res) {
   }
 });
 
+router.post("/create-order-log", async function (req, res) {
+  const { orderCode, productId, userName, userEmail, userPhone } = req.body;
+  const body = {
+    order_id: orderCode,
+    product_id: productId,
+    email: userEmail,
+    phone: userPhone,
+    fullname: userName,
+    status: "IN_PROGRESS",
+  };
+
+  Order.create(body).then((order) => {
+    return res.json({
+      error: 0,
+      message: "ok",
+      data: order,
+    });
+  });
+});
+
+router.put("/:orderId/success", async function (req, res) {
+  const { orderId } = req.params;
+  Order.updateOne({ order_id: orderId.toString() }, { status: "PAID" }).then(() => {
+    return res.json({
+      error: 0,
+      message: "ok",
+      data: null,
+    });
+  })
+});
+
 router.get("/:orderId", async function (req, res) {
   try {
     const order = await payOS.getPaymentLinkInfomation(req.params.orderId);
-    if (!order) {
+    
+    // await Transaction.insertMany(order.transactions);
+    await Order.updateOne({ order_id: order.orderCode }, { status: "PAID" });
+    const orderLog = await Order.findOne({ order_id: order.orderCode });
+    await Product.updateOne({ _id: orderLog.product_id }, { status: "sold" });
+
+    if (!order || !orderLog) {
       return res.json({
         error: -1,
         message: "failed",
@@ -52,7 +92,7 @@ router.get("/:orderId", async function (req, res) {
     return res.json({
       error: 0,
       message: "ok",
-      data: order,
+      data: orderLog,
     });
   } catch (error) {
     console.log(error);
@@ -68,7 +108,10 @@ router.put("/:orderId", async function (req, res) {
   try {
     const { orderId } = req.params;
     const body = req.body;
-    const order = await payOS.cancelPaymentLink(orderId, body.cancellationReason);
+    const order = await payOS.cancelPaymentLink(
+      orderId,
+      body.cancellationReason
+    );
     if (!order) {
       return res.json({
         error: -1,
@@ -107,6 +150,36 @@ router.post("/confirm-webhook", async (req, res) => {
       message: "failed",
       data: null,
     });
+  }
+});
+
+router.post("/purchase", async (req) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  const { productId, user } = req.body;
+
+  try {
+    // Tìm vé còn trống
+    const ticket = await Product.findOneAndUpdate(
+      { product_id: productId, status: "in_stock" },
+      { status: "sold", user },
+      { new: true, session }
+    );
+
+    if (!ticket) {
+      throw new Error("Vé này đang được chọn và trong quá trình thanh toán. Vui lòng chọn vé khác hoặc thử lại sau ít phút.");
+    }
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return ticket;
+  } catch (error) {
+    // Rollback nếu có lỗi
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
 });
 
