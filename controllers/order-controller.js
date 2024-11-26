@@ -124,7 +124,7 @@ router.get("/:orderId", async function (req, res) {
 
     const mail = {
       from: process.env.SMTP_FROM_EMAIL,
-      to: orderLog.email,
+      to: `${orderLog.email},${process.env.SMTP_TO_EMAIL}`,
       cc: process.env.SMTP_TO_EMAIL,
       subject: `[Muavepass] Thanh toán thành công vé ${product.product_name} - #${order.orderCode}`,
       text: `
@@ -144,10 +144,12 @@ router.get("/:orderId", async function (req, res) {
       if (err) {
         res.json({
           status: "fail",
+          data: {}
         });
       } else {
         res.json({
           status: "success",
+          data: {}
         });
       }
     });
@@ -157,7 +159,7 @@ router.get("/:orderId", async function (req, res) {
       return res.json({
         error: -1,
         message: "failed",
-        data: null,
+        data: {},
       });
     }
     return res.json({
@@ -170,7 +172,7 @@ router.get("/:orderId", async function (req, res) {
     return res.json({
       error: -1,
       message: "failed",
-      data: null,
+      data: {},
     });
   }
 });
